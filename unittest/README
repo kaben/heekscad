@@ -1,0 +1,13 @@
+This unittest framework is borrowed from OCE (see
+https://github.com/tpaviot/oce).
+
+To run these tests, first compile GoogleTest from the source code available in
+the folder "heekscad/unittest/gtest-1.6.0" like so:
+
+$ cd unittest/gtest-1.6.0/lib
+$ cmake ..
+$ make
+
+Afterward, the CMake builder should find the proper library and headers
+locations.
+

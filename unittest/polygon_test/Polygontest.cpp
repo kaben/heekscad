@@ -1,13 +1,17 @@
-// Polygon.cpp
+// Polygontest.cpp
 // Copyright (c) 2009, Perttu "celero55" Ahola
 // This program is released under the BSD license. See the file COPYING for details.
 
-#define UNITTEST_NO_HEEKS
+#include <gtest/gtest.h>
 
-#include "../src/Polygon.h"
+#ifndef UNITTEST_NO_HEEKS
+#define UNITTEST_NO_HEEKS
+#endif
+
+#include "src/Polygon.h"
 #include <stdlib.h>
 
-int main(int argc, char *argv[])
+TEST(TestSuite, testSweepLine)
 {
 	std::vector<LineSegment> lines_vector;
 
@@ -26,7 +30,8 @@ int main(int argc, char *argv[])
 	lines_vector.push_back(LineSegment(1,-2,1,-3));
 	lines_vector.push_back(LineSegment(4,3,3,2));*/
 
-	srand(time(0));
+	//srand(time(0));
+	srand(0);
 
 	int num_lines = 400;
 
@@ -62,9 +67,17 @@ int main(int argc, char *argv[])
 		}
 	}*/
 
+  /* For random seed "0" we should have 2,098 intersections. */
+  /* A different random seed will give a different result. */
+  EXPECT_EQ(2098, num);
 	std::cout<<"found "<<num<<" intersection points from "
 			<<num_lines<<" lines."<<std::endl;
+}
 
-	return 0;
+// Run all the tests that were declared with TEST()
+int main(int argc, char *argv[])
+{
+  testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }
 
