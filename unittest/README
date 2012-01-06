@@ -1,13 +1,49 @@
 This unittest framework is borrowed from OCE (see
 https://github.com/tpaviot/oce).
 
-To run these tests, first compile GoogleTest from the source code available in
-the folder "heekscad/unittest/gtest-1.6.0" like so:
+In order to run these tests, first compile Google Test from the source code
+available in the folder "heekscad/unittest/gtest-1.6.0" like so:
 
 $ cd unittest/gtest-1.6.0/lib
 $ cmake ..
 $ make
 
-Afterward, the CMake builder should find the proper library and headers
-locations.
+Afterward, the CMake builder should find the proper Google Test library and
+headers locations. After building HeeksCAD as usual, the tests can be run using
+the following command:
 
+$ make test
+
+Or to run a single test, "cd" into its directory, and then type "make test".
+For example, to run the "polygon test", do the following:
+
+$ cd unittest/polygon_test
+$ make test
+
+The "unittest" directory used to contain a single test in "Polygontest.cpp"
+with associated makefile. I've moved it into "unittest/polygon_test", and have
+modified it to use Google Test.
+
+Two things to note about the polygon test:
+- It uses the compile flag "-DUNITTEST_NO_HEEKS", and corresponding "#ifdef
+  UNITTEST_NO_HEEKS" in the HeeksCAD header file "Polygon.h" in order to work
+  around hardwired dependencies by *not* including certain header files when
+  UNITTEST_NO_HEEKS is #defined. This is nice because it permits unit testing
+  without having to first refactor HeeksCAD. On the other hand, it changes the
+  behavior of the code that's being tested, which means we're not unit-testing
+  the code that's used in HeeksCAD, just something that's really similar to it.
+  This should be fine, as long as we keep this in mind when we encounter
+  behavior that differs between actual use, and use in testcases.
+- I've made the polygon test compile its own copy of the relevant source file
+  "Polygon.cpp". Ideally we'd make a heekscad library, and link against it to
+  create both the heekscad executable, and the testing executables.
+
+There is a template test suite inside of "unittest/gtest_sandbox". The
+important files to copy are "CMakeLists.txt" and "sandbox.cpp".
+
+To make a new unit test, first create a new directory "unittest/<name>_test/"
+to contain your test code (replacing "<name>" with the name of your new test),
+and then copy "CMakeLists.txt" and "sandbox.cpp" into "unittest/<name>_test/"
+and modify as needed. You can rename "sandbox.cpp" to anything ending with
+".cpp". The directory "unittest/<name>_test/" can have any name ending with
+"_test".
