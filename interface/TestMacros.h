@@ -7,21 +7,11 @@
 #define TestMacros_h
 
 /*
-To stringify result of expansion of macro argument requires multiple levels of
-macro. See
-http://gcc.gnu.org/onlinedocs/cpp/Stringification.html#Stringification
-*/
-#define DBG_XSTR(s) DBG_STR(s)
-#define DBG_STR(s) #s
-/*
 Example use at "path/to/file.cpp", line 100:
-
 #include "interface/TestMacros.h"
-printf(DBG_NOTE("Hello, world!\n"));
-
+dprintf("Hello, world!\n");
 --> printf("path/to/file.cpp:100 Hello, world!\n")
 */
-#define DBG_NOTE(comment) __FILE__ ":" DBG_XSTR(__LINE__) ": " comment
+#define dprintf(format, ...) printf("In %s at "__FILE__":%d: " format, __func__, __LINE__, ##__VA_ARGS__)
   
 #endif
-
