@@ -18,6 +18,8 @@
 #include "MultiPoly.h"
 #include "Polygon.h"
 
+#include "interface/TestMacros.h"
+
 #include <sstream>
 #include <vector>
 #include <algorithm>
@@ -172,7 +174,7 @@ void SortEdges( std::vector<TopoDS_Edge> & edges )
 		if (l_itNextEdge != edges.end())
 		{
 			EdgeComparison compare( *l_itEdge );
-			std::sort( l_itNextEdge, edges.end(), compare );
+			std::partial_sort( l_itNextEdge+1, l_itEdge+2, edges.end(), compare );
 		} // End if - then
     } // End for
 } // End SortEdges() method
@@ -431,23 +433,40 @@ bool ConvertEdgesToFaceOrWire(const std::vector<TopoDS_Edge> &edges, std::list<T
 
 bool ConvertSketchToFaceOrWire(HeeksObj* object, std::list<TopoDS_Shape> &face_or_wire, bool face_not_wire)
 {
+	dprintf("entered ...\n");
     std::list< std::vector<TopoDS_Edge> > edges;
 
+	dprintf("ConvertSketchToEdges(...) ...\n");
     if (! ConvertSketchToEdges(object, edges))
     {
+	    dprintf("... ConvertSketchToEdges(...) returned false; exiting.\n");
         return(false);
     }
 
+	int num_edges = edges.size();
+	int edge_num = 0;
+	dprintf("considering %d edges ...\n", num_edges);
 	for(std::list< std::vector<TopoDS_Edge> >::iterator It = edges.begin(); It != edges.end(); It++)
 	{
+        edge_num++;
+	    dprintf("(edge_num %d/%d) considering edge ...\n", edge_num, num_edges);
 		std::vector<TopoDS_Edge> &list = *It;
 		if(list.size() > 0)
 		{
+	        dprintf("(edge_num %d/%d) SortEdges(...) ...\n", edge_num, num_edges);
 			SortEdges(list);
-			if(!ConvertEdgesToFaceOrWire(list, face_or_wire, face_not_wire))return false;
+	        dprintf("(edge_num %d/%d) ConvertEdgesToFaceOrWire(...) ...\n", edge_num, num_edges);
+			if(!ConvertEdgesToFaceOrWire(list, face_or_wire, face_not_wire))
+            {
+	            dprintf("(edge_num %d/%d) ... ConvertEdgesToFaceOrWire(...) returned false; exiting.\n", edge_num, num_edges);
+                return false;
+            }
+	        dprintf("(edge_num %d/%d) ... ConvertEdgesToFaceOrWire(...) returned true; continuing ...\n", edge_num, num_edges);
 		}
+	    dprintf("(edge_num %d/%d) ... done considering this edge.\n", edge_num, num_edges);
 	}
 
+	dprintf("... done.\n");
 	return true;
 }
 
