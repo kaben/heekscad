@@ -135,38 +135,51 @@ static gp_Pnt GetEnd(const TopoDS_Edge &edge)
 
 struct EdgeComparison : public std::binary_function<const TopoDS_Edge &, const TopoDS_Edge &, bool >
 {
+
+    gp_Pnt m_reference_start;
+    gp_Pnt m_reference_end;
+
     EdgeComparison( const TopoDS_Edge & edge )
-    {
-        m_reference_edge = edge;
-    }
+	  : m_reference_start(GetStart(edge))
+	  , m_reference_end(GetEnd(edge))
+    { }
 
     bool operator()( const TopoDS_Edge & lhs, const TopoDS_Edge & rhs ) const
     {
 
-        std::vector<double> lhs_distances;
-        lhs_distances.push_back( GetStart(m_reference_edge).Distance( GetStart(lhs) ) );
-        lhs_distances.push_back( GetStart(m_reference_edge).Distance( GetEnd(lhs) ) );
-        lhs_distances.push_back( GetEnd(m_reference_edge).Distance( GetStart(lhs) ) );
-        lhs_distances.push_back( GetEnd(m_reference_edge).Distance( GetEnd(lhs) ) );
-        std::sort(lhs_distances.begin(), lhs_distances.end());
+        gp_Pnt lhs_start(GetStart(lhs));
+        gp_Pnt lhs_end(GetEnd(lhs));
+        gp_Pnt rhs_start(GetStart(rhs));
+        gp_Pnt rhs_end(GetEnd(rhs));
 
-        std::vector<double> rhs_distances;
-        rhs_distances.push_back( GetStart(m_reference_edge).Distance( GetStart(rhs) ) );
-        rhs_distances.push_back( GetStart(m_reference_edge).Distance( GetEnd(rhs) ) );
-        rhs_distances.push_back( GetEnd(m_reference_edge).Distance( GetStart(rhs) ) );
-        rhs_distances.push_back( GetEnd(m_reference_edge).Distance( GetEnd(rhs) ) );
-        std::sort(rhs_distances.begin(), rhs_distances.end());
-
-        return(*(lhs_distances.begin()) < *(rhs_distances.begin()));
+        double lhs_distance = lhs_start.Distance(m_reference_start);
+        double tmp_distance = lhs_start.Distance(m_reference_end);
+        if (tmp_distance < lhs_distance) lhs_distance = tmp_distance;
+        tmp_distance = lhs_end.Distance(m_reference_start);
+        if (tmp_distance < lhs_distance) lhs_distance = tmp_distance;
+        tmp_distance = lhs_end.Distance(m_reference_end);
+        if (tmp_distance < lhs_distance) lhs_distance = tmp_distance;
+        
+        double rhs_distance = rhs_start.Distance(m_reference_start);
+        tmp_distance = rhs_start.Distance(m_reference_end);
+        if (tmp_distance < rhs_distance) rhs_distance = tmp_distance;
+        tmp_distance = rhs_end.Distance(m_reference_start);
+        if (tmp_distance < rhs_distance) rhs_distance = tmp_distance;
+        tmp_distance = rhs_end.Distance(m_reference_end);
+        if (tmp_distance < rhs_distance) rhs_distance = tmp_distance;
+        
+        return(lhs_distance < rhs_distance);
     }
-
-    TopoDS_Edge m_reference_edge;
 };
 
 void SortEdges( std::vector<TopoDS_Edge> & edges )
 {
+    int num_edges = edges.size();
+    int edge_num = 0;
 	for (std::vector<TopoDS_Edge>::iterator l_itEdge = edges.begin(); l_itEdge != edges.end(); l_itEdge++)
     {
+        edge_num++;
+        dprintf("(edge %d/%d) ...\n", edge_num, num_edges);
 		// We've already begun.  Just sort based on the previous point's location.
 		std::vector<TopoDS_Edge>::iterator l_itNextEdge = l_itEdge;
 		l_itNextEdge++;
@@ -443,27 +456,28 @@ bool ConvertSketchToFaceOrWire(HeeksObj* object, std::list<TopoDS_Shape> &face_o
         return(false);
     }
 
-	int num_edges = edges.size();
-	int edge_num = 0;
-	dprintf("considering %d edges ...\n", num_edges);
+	int num_edge_lists = edges.size();
+	int edge_list_num = 0;
+	dprintf("considering %d edge_lists ...\n", num_edge_lists);
 	for(std::list< std::vector<TopoDS_Edge> >::iterator It = edges.begin(); It != edges.end(); It++)
 	{
-        edge_num++;
-	    dprintf("(edge_num %d/%d) considering edge ...\n", edge_num, num_edges);
+        edge_list_num++;
+	    dprintf("(edge_list_num %d/%d) considering edge_list ...\n", edge_list_num, num_edge_lists);
 		std::vector<TopoDS_Edge> &list = *It;
 		if(list.size() > 0)
 		{
-	        dprintf("(edge_num %d/%d) SortEdges(...) ...\n", edge_num, num_edges);
+	        int num_edges = list.size();
+	        dprintf("(edge_list_num %d/%d) sorting %d edges with SortEdges(...) ...\n", edge_list_num, num_edge_lists, num_edges);
 			SortEdges(list);
-	        dprintf("(edge_num %d/%d) ConvertEdgesToFaceOrWire(...) ...\n", edge_num, num_edges);
+	        dprintf("(edge_list_num %d/%d) ConvertEdgesToFaceOrWire(...) ...\n", edge_list_num, num_edge_lists);
 			if(!ConvertEdgesToFaceOrWire(list, face_or_wire, face_not_wire))
             {
-	            dprintf("(edge_num %d/%d) ... ConvertEdgesToFaceOrWire(...) returned false; exiting.\n", edge_num, num_edges);
+	            dprintf("(edge_list_num %d/%d) ... ConvertEdgesToFaceOrWire(...) returned false; exiting.\n", edge_list_num, num_edge_lists);
                 return false;
             }
-	        dprintf("(edge_num %d/%d) ... ConvertEdgesToFaceOrWire(...) returned true; continuing ...\n", edge_num, num_edges);
+	        dprintf("(edge_list_num %d/%d) ... ConvertEdgesToFaceOrWire(...) returned true; continuing ...\n", edge_list_num, num_edge_lists);
 		}
-	    dprintf("(edge_num %d/%d) ... done considering this edge.\n", edge_num, num_edges);
+	    dprintf("(edge_list_num %d/%d) ... done considering this edge.\n", edge_list_num, num_edge_lists);
 	}
 
 	dprintf("... done.\n");
